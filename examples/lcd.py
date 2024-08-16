@@ -1,28 +1,28 @@
-#!/usr/bin/env python3
-
-import logging
-
-import st7735
-from fonts.ttf import RobotoMedium as UserFont
+import socket
+import st7735  # Use the lowercase module name as per the deprecation warning
 from PIL import Image, ImageDraw, ImageFont
+from fonts.ttf import RobotoMedium as UserFont
+import logging
+import time
+
+# Add delay to ensure that Wi-Fi is connected before displaying IP
+time.sleep(0)
 
 logging.basicConfig(
-    format="%(asctime)s.%(msecs)03d %(levelname)-8s %(message)s",
+    format='%(asctime)s.%(msecs)03d %(levelname)-8s %(message)s',
     level=logging.INFO,
-    datefmt="%Y-%m-%d %H:%M:%S")
+    datefmt='%Y-%m-%d %H:%M:%S')
 
-logging.info("""lcd.py - Hello, World! example on the 0.96" LCD.
-
+logging.info("""ipconfig.py - Display IP address example on the 0.96" LCD.
 Press Ctrl+C to exit!
-
 """)
 
 # Create LCD class instance.
 disp = st7735.ST7735(
     port=0,
     cs=1,
-    dc="GPIO9",
-    backlight="GPIO12",
+    dc=9,
+    backlight=12,
     rotation=270,
     spi_speed_hz=10000000
 )
@@ -35,7 +35,7 @@ WIDTH = disp.width
 HEIGHT = disp.height
 
 # New canvas to draw on.
-img = Image.new("RGB", (WIDTH, HEIGHT), color=(0, 0, 0))
+img = Image.new('RGB', (WIDTH, HEIGHT), color=(0, 0, 0))
 draw = ImageDraw.Draw(img)
 
 # Text settings.
@@ -44,13 +44,16 @@ font = ImageFont.truetype(UserFont, font_size)
 text_colour = (255, 255, 255)
 back_colour = (0, 170, 170)
 
-message = "Hello, World!"
+# Get IP address.
+s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+s.connect(("8.8.8.8", 80))
+message = s.getsockname()[0]
+print(message)
+s.close()
 
-x1, y1, x2, y2 = font.getbbox(message)
-size_x = x2 - x1
-size_y = y2 - y1
-
-# Calculate text position
+# Calculate text size and position.
+bbox = draw.textbbox((0, 0), message, font=font)
+size_x, size_y = bbox[2] - bbox[0], bbox[3] - bbox[1]
 x = (WIDTH - size_x) / 2
 y = (HEIGHT / 2) - (size_y / 2)
 
